@@ -1,4 +1,4 @@
-export const metadata = { title: "YogaxD Downloader", description: "Download from YouTube, TikTok, IG, X using API" };
+export const metadata = { title: "Video & Audio Downloader", description: "Download from YouTube, TikTok, IG, X via proxy APIs" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

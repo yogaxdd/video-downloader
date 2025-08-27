@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 
 type Result = { link?: string; filename?: string; size?: number; error?: string };
 
-type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "other";
+type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "spotify" | "other";
 
 function detectPlatform(url: string): Platform {
   try {
@@ -16,6 +16,7 @@ function detectPlatform(url: string): Platform {
     if (h.includes("facebook.com") || h.includes("fb.watch")) return "facebook";
     if (h.includes("x.com") || h.includes("twitter.com")) return "twitter";
     if (h.includes("instagram.com")) return "instagram";
+    if (h.includes("open.spotify.com")) return "spotify";
     return "other";
   } catch {
     return "other";
@@ -30,6 +31,7 @@ function prettyPlatform(p: Platform) {
     case "facebook": return "Facebook";
     case "instagram": return "Instagram";
     case "twitter": return "X/Twitter";
+    case "spotify": return "Spotify";
     default: return "Other";
   }
 }
@@ -42,6 +44,7 @@ function platformColor(p: Platform) {
     case "facebook": return "#1877f2";
     case "instagram": return "#e1306c";
     case "twitter": return "#1DA1F2";
+    case "spotify": return "#1db954";
     default: return "#7f8ea3";
   }
 }
@@ -78,7 +81,16 @@ export default function Home() {
     setLoading(true); setResult(null); setProgress("");
     try {
       if (!url.trim()) throw new Error("Masukkan URL yang valid");
-      if (platform !== "youtube") {
+      if (platform === "spotify") {
+        const res = await fetch("/api/spotify", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.download_url) {
+          setResult({ link: data.download_url, filename: data.filename });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform !== "youtube") {
         const res = await fetch("/api/dl", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url, downloadMode: "auto" }) });
         if (!res.ok) throw new Error(`Gagal: ${res.status}`);
         const data = await res.json();
@@ -316,6 +328,7 @@ export default function Home() {
                 { key: "tiktok", label: "TikTok Video", status: "online" },
                 { key: "instagram", label: "Instagram Reels", status: "online" },
                 { key: "twitter", label: "X/Twitter Video/Photo", status: "online" },
+                { key: "spotify", label: "Spotify Music", status: "online" },
                 { key: "youtube", label: "YouTube Video", status: "under maintenance" },
               ].map((s) => {
                 const st = s.status.toLowerCase();
