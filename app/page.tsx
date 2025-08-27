@@ -3,7 +3,21 @@ import { useMemo, useRef, useState } from "react";
 
 // No quality picker; we'll choose best available automatically
 
-type Result = { link?: string; filename?: string; size?: number; error?: string };
+type Result = { 
+  link?: string; 
+  filename?: string; 
+  size?: number; 
+  error?: string;
+  links?: Array<{ label: string; url: string }>;
+  title?: string;
+  duration?: number | string;
+  video?: Array<{ quality: string; url: string }>;
+  music?: string;
+  thumbnail?: string;
+  media?: Array<{ url: string; type: string; thumbnail?: string }>;
+  author?: string;
+  caption?: string;
+};
 
 type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "spotify" | "other";
 
@@ -96,6 +110,50 @@ export default function Home() {
         const data = await res.json();
         if (data?.status === "success" && data?.download_url) {
           setResult({ link: data.download_url, filename: data.filename });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "tiktok") {
+        const res = await fetch("/api/tiktok", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.links) {
+          setResult({ 
+            links: data.links, 
+            filename: data.filename,
+            title: data.title,
+            duration: data.duration
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "facebook") {
+        const res = await fetch("/api/facebook", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.video) {
+          setResult({ 
+            video: data.video, 
+            filename: data.filename,
+            title: data.title,
+            duration: data.duration,
+            music: data.music,
+            thumbnail: data.thumbnail
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "instagram") {
+        const res = await fetch("/api/instagram", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.media) {
+          setResult({ 
+            media: data.media, 
+            filename: data.filename,
+            author: data.author,
+            caption: data.caption
+          });
         } else {
           throw new Error(data?.error || "Response tidak dikenal");
         }
@@ -251,6 +309,157 @@ export default function Home() {
             >
               {result.error ? (
                 <p style={{ color: "#ff6b6b" }}>Error: {result.error}</p>
+              ) : result.links ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {result.title && (
+                    <div>
+                      <p style={{ opacity: 0.9, marginBottom: 4 }}><strong>{result.title}</strong></p>
+                      {result.duration && <p style={{ opacity: 0.7, fontSize: 14 }}>Durasi: {result.duration} detik</p>}
+                    </div>
+                  )}
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <p style={{ opacity: 0.8, fontSize: 14, marginBottom: 4 }}>Pilih format download:</p>
+                    {result.links.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          border: "1px solid #25F4EE",
+                          background: link.label.includes("HD") 
+                            ? "linear-gradient(180deg, #25F4EE, #1DB8B3)"
+                            : link.label.includes("MP3")
+                            ? "linear-gradient(180deg, #ff6b6b, #e55656)"
+                            : "linear-gradient(180deg, #3db6ff, #1f8eff)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          letterSpacing: 0.3,
+                          textDecoration: "none",
+                          boxShadow: "0 6px 16px rgba(37,244,238,0.25)",
+                          fontSize: 14,
+                        }}
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : result.video ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {result.title && (
+                    <div>
+                      <p style={{ opacity: 0.9, marginBottom: 4 }}><strong>{result.title}</strong></p>
+                      {result.duration && <p style={{ opacity: 0.7, fontSize: 14 }}>Durasi: {result.duration}</p>}
+                    </div>
+                  )}
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <p style={{ opacity: 0.8, fontSize: 14, marginBottom: 4 }}>Pilih kualitas video:</p>
+                    {result.video.map((video, index) => (
+                      <a
+                        key={index}
+                        href={video.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          border: "1px solid #1877f2",
+                          background: video.quality.includes("1080p") || video.quality.includes("HD")
+                            ? "linear-gradient(180deg, #1877f2, #166fe5)"
+                            : video.quality.includes("720p")
+                            ? "linear-gradient(180deg, #42a5f5, #1976d2)"
+                            : "linear-gradient(180deg, #3db6ff, #1f8eff)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          letterSpacing: 0.3,
+                          textDecoration: "none",
+                          boxShadow: "0 6px 16px rgba(24,119,242,0.25)",
+                          fontSize: 14,
+                        }}
+                      >
+                        {video.quality}
+                      </a>
+                    ))}
+                    {result.music && (
+                      <a
+                        href={result.music}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          border: "1px solid #ff6b6b",
+                          background: "linear-gradient(180deg, #ff6b6b, #e55656)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          letterSpacing: 0.3,
+                          textDecoration: "none",
+                          boxShadow: "0 6px 16px rgba(255,107,107,0.25)",
+                          fontSize: 14,
+                        }}
+                      >
+                        Unduh Audio Only
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : result.media ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {result.author && (
+                    <div>
+                      <p style={{ opacity: 0.9, marginBottom: 4 }}><strong>@{result.author}</strong></p>
+                      {result.caption && <p style={{ opacity: 0.7, fontSize: 14 }}>{result.caption}</p>}
+                    </div>
+                  )}
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <p style={{ opacity: 0.8, fontSize: 14, marginBottom: 4 }}>
+                      {result.media && result.media.length > 1 ? `${result.media.length} media items:` : "Media:"}
+                    </p>
+                    {result.media.map((media, index) => (
+                      <a
+                        key={index}
+                        href={media.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          border: "1px solid #e1306c",
+                          background: media.type === "video"
+                            ? "linear-gradient(180deg, #e1306c, #c13584)"
+                            : "linear-gradient(180deg, #f56040, #e1306c)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          letterSpacing: 0.3,
+                          textDecoration: "none",
+                          boxShadow: "0 6px 16px rgba(225,48,108,0.25)",
+                          fontSize: 14,
+                        }}
+                      >
+                        {media.type === "video" ? "📹" : "🖼️"} {media.type === "video" ? "Video" : "Image"} {result.media && result.media.length > 1 ? `#${index + 1}` : ""}
+                      </a>
+                    ))}
+                  </div>
+                </div>
               ) : result.link ? (
                 <div style={{ display: "grid", gap: 10 }}>
                   <p style={{ opacity: 0.9 }}>{result.filename ?? "File siap diunduh"}</p>
@@ -290,7 +499,7 @@ export default function Home() {
                 { key: "facebook", label: "Facebook Reels", status: "online" },
                 { key: "tiktok", label: "TikTok Video", status: "online" },
                 { key: "instagram", label: "Instagram Reels", status: "online" },
-                { key: "twitter", label: "X/Twitter Video/Photo", status: "online" },
+                { key: "twitter", label: "X/Twitter Video/Photo", status: "under maintenance" },
                 { key: "spotify", label: "Spotify Music", status: "online" },
                 { key: "youtube", label: "YouTube Video", status: "online" },
               ].map((s) => {
