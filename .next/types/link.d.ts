@@ -30,12 +30,13 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/`
+    | `/api/spotify`
     | `/api/dl`
     | `/api/ytdl/check`
-    | `/api/ytdl/get`
     | `/api/ytdl/create`
+    | `/api/ytdl/get`
     | `/api/ytdl/info`
-    | `/api/spotify`
+    | `/api/youtube`
   type DynamicRoutes<T extends string = string> = never
 
   type RouteImpl<T> = 

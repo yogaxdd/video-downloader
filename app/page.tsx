@@ -90,7 +90,16 @@ export default function Home() {
         } else {
           throw new Error(data?.error || "Response tidak dikenal");
         }
-      } else if (platform !== "youtube") {
+      } else if (platform === "youtube") {
+        const res = await fetch("/api/youtube", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.download_url) {
+          setResult({ link: data.download_url, filename: data.filename });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else {
         const res = await fetch("/api/dl", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url, downloadMode: "auto" }) });
         if (!res.ok) throw new Error(`Gagal: ${res.status}`);
         const data = await res.json();
@@ -101,52 +110,6 @@ export default function Home() {
         } else {
           throw new Error("Response tidak dikenal");
         }
-      } else {
-        setProgress("Ambil info video...");
-        const infoRes = await fetch(`/api/ytdl/info?url=${encodeURIComponent(url)}`);
-        if (!infoRes.ok) throw new Error("Gagal ambil info");
-        const info = await infoRes.json();
-        const formats: any[] = info?.formats ?? [];
-        // Pilih format video+audio terbaik otomatis (prioritas: resolusi tertinggi, lalu mp4)
-        const candidates = formats.filter((f: any) => {
-          const hasVideo = (f.vcodec ?? "") !== "none";
-          const hasAudio = (f.acodec ?? "") !== "none";
-          return hasVideo && hasAudio;
-        }).sort((a:any,b:any)=>{
-          const ah = a.height ?? 0; const bh = b.height ?? 0;
-          if (bh !== ah) return bh - ah; // tinggi dulu
-          const aMp4 = (a.ext||"").includes("mp4") ? 1 : 0;
-          const bMp4 = (b.ext||"").includes("mp4") ? 1 : 0;
-          return bMp4 - aMp4;
-        });
-        const chosen = candidates[0] ?? null;
-        setProgress("Buat job download...");
-        const createRes = await fetch(`/api/ytdl/create`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url, format_id: chosen?.format_id ?? null }) });
-        if (!createRes.ok) throw new Error("Gagal membuat job");
-        const create = await createRes.json();
-        const jobId = create?.job_id ?? create?.id ?? create?.jobId;
-        if (!jobId) throw new Error("Job ID tidak ditemukan");
-        // Polling status
-        let done = false; let lastLink: string | undefined; let file: string | undefined;
-        for (let i=0;i<60 && !done;i++) { // ~60x per 1s ~ 60s
-          await new Promise(r=>setTimeout(r, 1000));
-          const stRes = await fetch(`/api/ytdl/check?job_id=${jobId}`);
-          const st = await stRes.json();
-          const status = (st?.status ?? "").toString().toLowerCase();
-          const p = st?.progress ? Math.round(st.progress) : undefined;
-          setProgress(p ? `Memproses... ${p}%` : `Status: ${status}`);
-          if (status === "finished" || status === "success" || status === "done") {
-            const getRes = await fetch(`/api/ytdl/get?job_id=${jobId}`);
-            const got = await getRes.json();
-            lastLink = got?.download_url; file = got?.filename ?? got?.file ?? undefined;
-            done = true; break;
-          }
-          if (status === "error" || st?.error) {
-            throw new Error(st?.error || "Job gagal");
-          }
-        }
-        if (!lastLink) throw new Error("Timeout menunggu hasil");
-        setResult({ link: lastLink, filename: file, size: undefined });
       }
     } catch (e:any) {
       setResult({ error: e?.message || "Terjadi kesalahan" });
@@ -329,7 +292,7 @@ export default function Home() {
                 { key: "instagram", label: "Instagram Reels", status: "online" },
                 { key: "twitter", label: "X/Twitter Video/Photo", status: "online" },
                 { key: "spotify", label: "Spotify Music", status: "online" },
-                { key: "youtube", label: "YouTube Video", status: "under maintenance" },
+                { key: "youtube", label: "YouTube Video", status: "online" },
               ].map((s) => {
                 const st = s.status.toLowerCase();
                 const isOnline = ["run", "online", "up"].includes(st);
@@ -373,7 +336,7 @@ export default function Home() {
           </section>
 
           <footer style={{ marginTop: 8, opacity: 0.6, fontSize: 12, textAlign: "center" }}>
-            API by <span style={{ color: "#9ecbff" }}>dl.siputzx.my.id</span> & <span style={{ color: "#9ecbff" }}>ytdl.siputzx.my.id</span>
+            API by <span style={{ color: "#9ecbff" }}>dl.siputzx.my.id</span> & <span style={{ color: "#9ecbff" }}>sankavollerei.com</span>
           </footer>
           <style jsx>{`
             @media (max-width: 520px) {
