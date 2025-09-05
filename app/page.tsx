@@ -19,7 +19,7 @@ type Result = {
   caption?: string;
 };
 
-type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "spotify" | "pinterest" | "capcut" | "threads" | "bilibili" | "applemusic" | "soundcloud" | "other";
+type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "spotify" | "pinterest" | "capcut" | "threads" | "bilibili" | "applemusic" | "soundcloud" | "likee" | "other";
 
 function detectPlatform(url: string): Platform {
   try {
@@ -37,6 +37,7 @@ function detectPlatform(url: string): Platform {
     if (h.includes("bilibili.tv") || h.includes("bilibili.com")) return "bilibili";
     if (h.includes("music.apple.com")) return "applemusic";
     if (h.includes("soundcloud.com")) return "soundcloud";
+    if (h.includes("likee.video") || h.includes("l.likee.video")) return "likee";
     return "other";
   } catch {
     return "other";
@@ -58,6 +59,7 @@ function prettyPlatform(p: Platform) {
     case "bilibili": return "Bilibili";
     case "applemusic": return "Apple Music";
     case "soundcloud": return "SoundCloud";
+    case "likee": return "Likee";
     default: return "Other";
   }
 }
@@ -77,6 +79,7 @@ function platformColor(p: Platform) {
     case "bilibili": return "#00a1d6";
     case "applemusic": return "#fc3c44";
     case "soundcloud": return "#ff5500";
+    case "likee": return "#ff1744";
     default: return "#7f8ea3";
   }
 }
@@ -86,6 +89,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [progress, setProgress] = useState<string>("");
+  const [youtubeFormat, setYoutubeFormat] = useState<"mp4" | "mp3">("mp4");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const platform = useMemo(() => detectPlatform(url), [url]);
@@ -123,11 +127,17 @@ export default function Home() {
           throw new Error(data?.error || "Response tidak dikenal");
         }
       } else if (platform === "youtube") {
-        const res = await fetch("/api/youtube", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        const res = await fetch("/api/youtube", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url, format: youtubeFormat }) });
         if (!res.ok) throw new Error(`Gagal: ${res.status}`);
         const data = await res.json();
         if (data?.status === "success" && data?.download_url) {
-          setResult({ link: data.download_url, filename: data.filename });
+          setResult({ 
+            link: data.download_url, 
+            filename: data.filename,
+            title: data.title,
+            duration: data.duration,
+            thumbnail: data.thumbnail
+          });
         } else {
           throw new Error(data?.error || "Response tidak dikenal");
         }
@@ -277,6 +287,19 @@ export default function Home() {
         } else {
           throw new Error(data?.error || "Response tidak dikenal");
         }
+      } else if (platform === "likee") {
+        const res = await fetch("/api/likee", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.links) {
+          setResult({ 
+            links: data.links, 
+            filename: data.filename,
+            caption: data.info
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
       } else {
         const res = await fetch("/api/dl", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url, downloadMode: "auto" }) });
         if (!res.ok) throw new Error(`Gagal: ${res.status}`);
@@ -321,7 +344,7 @@ export default function Home() {
         }}
       >
         <h1 style={{ fontSize: "clamp(20px, 4.5vw, 28px)", fontWeight: 800, marginBottom: 6, whiteSpace: "nowrap", textAlign: "center" }}>YogaxD Downloader</h1>
-        <p style={{ opacity: 0.85, marginBottom: 22, textAlign: "center" }}>Unduh video tanpa watermark gratis!</p>
+        <p style={{ opacity: 0.85, marginBottom: 22, textAlign: "center" }}>Unduh video/image/audio tanpa watermark gratis!</p>
 
         <div style={{ display: "grid", gap: 14 }}>
           <div className="inputRow" style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
@@ -377,6 +400,31 @@ export default function Home() {
                 {prettyPlatform(platform)}
               </span>
             )}
+            
+            {platform === "youtube" && (
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#c7d2f0" }}>Format:</label>
+                <select
+                  value={youtubeFormat}
+                  onChange={(e) => setYoutubeFormat(e.target.value as "mp4" | "mp3")}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #2b3250",
+                    background: "#0f1530",
+                    color: "#e6e8ef",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    outline: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="mp4">MP4 (Video)</option>
+                  <option value="mp3">MP3 (Audio)</option>
+                </select>
+              </div>
+            )}
+            
             <div style={{flex:1}} />
             <button className="getInfoBtn"
               onClick={handleDownload}
@@ -625,6 +673,7 @@ export default function Home() {
                 { key: "bilibili", label: "Bilibili/BStation Video", status: "online" },
                 { key: "applemusic", label: "Apple Music", status: "online" },
                 { key: "soundcloud", label: "SoundCloud Music", status: "online" },
+                { key: "likee", label: "Likee Video", status: "online" },
                 { key: "twitter", label: "X/Twitter Video/Photo", status: "online" },
                 { key: "spotify", label: "Spotify Music", status: "online" },
                 { key: "youtube", label: "YouTube Video", status: "online" },
