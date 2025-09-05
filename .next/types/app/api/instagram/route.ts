@@ -1,4 +1,4 @@
-// File: C:\Users\0\Desktop\YogaScript\2\vid-download\app\api\instagram\route.ts
+// File: C:\Users\0\Documents\GitHub\video-downloader\app\api\instagram\route.ts
 import * as entry from '../../../../../app/api/instagram/route.js'
 import type { NextRequest } from 'next/server.js'
 

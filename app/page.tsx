@@ -19,7 +19,7 @@ type Result = {
   caption?: string;
 };
 
-type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "spotify" | "other";
+type Platform = "youtube" | "tiktok" | "facebook" | "instagram" | "twitter" | "spotify" | "pinterest" | "capcut" | "threads" | "bilibili" | "applemusic" | "soundcloud" | "other";
 
 function detectPlatform(url: string): Platform {
   try {
@@ -31,6 +31,12 @@ function detectPlatform(url: string): Platform {
     if (h.includes("x.com") || h.includes("twitter.com")) return "twitter";
     if (h.includes("instagram.com")) return "instagram";
     if (h.includes("open.spotify.com")) return "spotify";
+    if (h.includes("pinterest.com")) return "pinterest";
+    if (h.includes("capcut.com")) return "capcut";
+    if (h.includes("threads.net")) return "threads";
+    if (h.includes("bilibili.tv") || h.includes("bilibili.com")) return "bilibili";
+    if (h.includes("music.apple.com")) return "applemusic";
+    if (h.includes("soundcloud.com")) return "soundcloud";
     return "other";
   } catch {
     return "other";
@@ -46,6 +52,12 @@ function prettyPlatform(p: Platform) {
     case "instagram": return "Instagram";
     case "twitter": return "X/Twitter";
     case "spotify": return "Spotify";
+    case "pinterest": return "Pinterest";
+    case "capcut": return "CapCut";
+    case "threads": return "Threads";
+    case "bilibili": return "Bilibili";
+    case "applemusic": return "Apple Music";
+    case "soundcloud": return "SoundCloud";
     default: return "Other";
   }
 }
@@ -59,6 +71,12 @@ function platformColor(p: Platform) {
     case "instagram": return "#e1306c";
     case "twitter": return "#1DA1F2";
     case "spotify": return "#1db954";
+    case "pinterest": return "#bd081c";
+    case "capcut": return "#ff6b35";
+    case "threads": return "#000000";
+    case "bilibili": return "#00a1d6";
+    case "applemusic": return "#fc3c44";
+    case "soundcloud": return "#ff5500";
     default: return "#7f8ea3";
   }
 }
@@ -153,6 +171,108 @@ export default function Home() {
             filename: data.filename,
             author: data.author,
             caption: data.caption
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "pinterest") {
+        const res = await fetch("/api/pinterest", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.media) {
+          setResult({ 
+            media: data.media, 
+            filename: data.filename
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "capcut") {
+        const res = await fetch("/api/capcut", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.video) {
+          setResult({ 
+            video: data.video, 
+            filename: data.filename,
+            title: data.title,
+            author: data.author,
+            thumbnail: data.thumbnail
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "twitter") {
+        const res = await fetch("/api/twitter", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success") {
+          if (data?.media) {
+            setResult({ 
+              media: data.media, 
+              filename: data.filename,
+              author: data.author,
+              caption: data.caption
+            });
+          } else {
+            setResult({ 
+              link: "#", 
+              filename: data.filename || "Twitter content",
+              error: "Content berhasil diproses namun tidak ada media yang dapat diunduh"
+            });
+          }
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "threads") {
+        const res = await fetch("/api/threads", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.link) {
+          setResult({ 
+            link: data.link, 
+            filename: data.filename
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "bilibili") {
+        const res = await fetch("/api/bilibili", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.link) {
+          setResult({ 
+            link: data.link, 
+            filename: data.filename,
+            title: data.title
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "applemusic") {
+        const res = await fetch("/api/applemusic", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.link) {
+          setResult({ 
+            link: data.link, 
+            filename: data.filename,
+            title: data.title,
+            duration: data.duration
+          });
+        } else {
+          throw new Error(data?.error || "Response tidak dikenal");
+        }
+      } else if (platform === "soundcloud") {
+        const res = await fetch("/api/soundcloud", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ url }) });
+        if (!res.ok) throw new Error(`Gagal: ${res.status}`);
+        const data = await res.json();
+        if (data?.status === "success" && data?.link) {
+          setResult({ 
+            link: data.link, 
+            filename: data.filename,
+            title: data.title,
+            author: data.author
           });
         } else {
           throw new Error(data?.error || "Response tidak dikenal");
@@ -498,8 +618,14 @@ export default function Home() {
               {[
                 { key: "facebook", label: "Facebook Reels", status: "online" },
                 { key: "tiktok", label: "TikTok Video", status: "online" },
-                { key: "instagram", label: "Instagram Reels", status: "online" },
-                { key: "twitter", label: "X/Twitter Video/Photo", status: "under maintenance" },
+                { key: "instagram", label: "Instagram Reels/Images", status: "online" },
+                { key: "pinterest", label: "Pinterest Images", status: "online" },
+                { key: "capcut", label: "CapCut Templates", status: "online" },
+                { key: "threads", label: "Threads Video/Photo", status: "online" },
+                { key: "bilibili", label: "Bilibili/BStation Video", status: "online" },
+                { key: "applemusic", label: "Apple Music", status: "online" },
+                { key: "soundcloud", label: "SoundCloud Music", status: "online" },
+                { key: "twitter", label: "X/Twitter Video/Photo", status: "online" },
                 { key: "spotify", label: "Spotify Music", status: "online" },
                 { key: "youtube", label: "YouTube Video", status: "online" },
               ].map((s) => {
@@ -545,7 +671,7 @@ export default function Home() {
           </section>
 
           <footer style={{ marginTop: 8, opacity: 0.6, fontSize: 12, textAlign: "center" }}>
-            API by <span style={{ color: "#9ecbff" }}>dl.siputzx.my.id</span> & <span style={{ color: "#9ecbff" }}>sankavollerei.com</span>
+            API by <span style={{ color: "#9ecbff" }}>https://api.ferdev.my.id/</span> & <span style={{ color: "#9ecbff" }}>sankavollerei.com</span>
           </footer>
           <style jsx>{`
             @media (max-width: 520px) {

@@ -1,4 +1,4 @@
-// File: C:\Users\0\Desktop\YogaScript\2\vid-download\app\layout.tsx
+// File: C:\Users\0\Documents\GitHub\video-downloader\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

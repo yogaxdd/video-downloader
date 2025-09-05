@@ -31,15 +31,22 @@ declare namespace __next_route_internal_types__ {
   type StaticRoutes = 
     | `/`
     | `/api/dl`
-    | `/api/spotify`
-    | `/api/ytdl/check`
-    | `/api/ytdl/get`
-    | `/api/ytdl/create`
-    | `/api/ytdl/info`
-    | `/api/youtube`
-    | `/api/tiktok`
     | `/api/facebook`
     | `/api/instagram`
+    | `/api/pinterest`
+    | `/api/spotify`
+    | `/api/tiktok`
+    | `/api/youtube`
+    | `/api/ytdl/check`
+    | `/api/ytdl/create`
+    | `/api/ytdl/get`
+    | `/api/ytdl/info`
+    | `/api/capcut`
+    | `/api/twitter`
+    | `/api/threads`
+    | `/api/bilibili`
+    | `/api/applemusic`
+    | `/api/soundcloud`
   type DynamicRoutes<T extends string = string> = never
 
   type RouteImpl<T> = 
